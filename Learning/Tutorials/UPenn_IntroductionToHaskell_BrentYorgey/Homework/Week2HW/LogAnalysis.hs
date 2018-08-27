@@ -3,7 +3,7 @@ module LogAnalysis where
 import Log
 import Data.List
 import Data.List.Split
-import Text.Read
+import Text.Read()
 
 isM :: String -> Bool
 isM s = s `elem` ["I","W","E"]
@@ -42,3 +42,59 @@ parse :: String -> [LogMessage]
 parse str = map parseMessage ls
     where ls = lines str
 
+
+myinsert :: LogMessage -> MessageTree -> MessageTree
+
+myinsert logMessage tree  = case logMessage of
+    Unknown _ -> tree
+    LogMessage _ insert_ts _ -> case tree of
+        Leaf -> Node Leaf logMessage Leaf
+        Node leftTree (LogMessage tree_mt tree_ts tree_text) rightTree -> if insert_ts > tree_ts then (Node leftTree (LogMessage tree_mt tree_ts tree_text) (myinsert logMessage rightTree)) else (Node (myinsert logMessage leftTree) (LogMessage tree_mt tree_ts tree_text) rightTree)
+        _ -> Leaf
+
+build :: [LogMessage] -> MessageTree
+
+
+build [] = Leaf
+
+build (x:xs) = myinsert x (build xs)
+
+
+build2 :: [LogMessage] -> MessageTree
+build2 lst = case lst of
+    [] -> Leaf
+    x:xs -> myinsert x (build xs)
+
+inOrder :: MessageTree -> [LogMessage]
+
+inOrder Leaf = []
+
+inOrder tree = case tree of
+    Leaf -> []
+    Node Leaf lm Leaf -> [lm]
+    Node lt lm rt -> inOrder lt ++ [lm] ++ inOrder rt
+
+
+whatWentWrong :: [LogMessage] -> [String]
+
+whatWentWrong lst = case srtList of
+    [] -> []
+    x:xs -> case x of
+        LogMessage (Error num) _ text -> if num > 50
+                then [text] ++ whatWentWrong xs
+                else whatWentWrong xs
+        _ -> whatWentWrong xs
+    where srtList =inOrder (build lst)
+
+
+{-
+a = LogMessage Info 305 "sdfa3g"
+b = LogMessage (Error 23425) 299 "testing error 2"
+c = LogMessage Info 388 "fhs"
+d =  Unknown "dsfgsdfgw"
+e = LogMessage Info 290 "fasd"
+f = LogMessage Info 301 "rtj"
+g = LogMessage Warning 295 "sad"
+lst = [a,b,c,d,e,f,g]
+myTree = build2 lst
+-}
