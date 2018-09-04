@@ -1,0 +1,5 @@
+lst = [4,1,8,3,2]
+
+for i in (0 to (length lst)-1)
+    for j in (1 to length lst)
+        select these indices [i,(i*2+1)..length lst] from lst
